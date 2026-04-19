@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SecurityErrorResponseWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.arka.notification.infrastructure.security</a> &gt; <span class="el_source">SecurityErrorResponseWriter.java</span></div><h1>SecurityErrorResponseWriter.java</h1><pre class="source lang-java linenums">package com.arka.notification.infrastructure.security;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+
+import com.arka.notification.domain.exception.NotificationException;
+import com.arka.notification.domain.exception.dto.ApiRespuestaExcepcionDTO;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Mono;
+
+@Component
+<span class="nc" id="L17">@RequiredArgsConstructor</span>
+public class SecurityErrorResponseWriter {
+
+    private static final String TITULO_ERROR = &quot;Acceso denegado&quot;;
+    private static final String CODIGO_ERROR = &quot;SECURITY_403&quot;;
+
+    private final ObjectMapper objectMapper;
+
+    public Mono&lt;Void&gt; writeForbidden(ServerWebExchange exchange, String detalleError) {
+<span class="nc" id="L26">        NotificationException exception = new NotificationException(</span>
+                TITULO_ERROR,
+                CODIGO_ERROR,
+                detalleError,
+<span class="nc" id="L30">                exchange.getRequest().getPath().value(),</span>
+                HttpStatus.FORBIDDEN);
+
+<span class="nc" id="L33">        ApiRespuestaExcepcionDTO body = ApiRespuestaExcepcionDTO.builder()</span>
+<span class="nc" id="L34">                .tipoError(exception.getTipoError())</span>
+<span class="nc" id="L35">                .tituloError(exception.getTituloError())</span>
+<span class="nc" id="L36">                .codigoError(exception.getCodigoError())</span>
+<span class="nc" id="L37">                .detalleError(exception.getMessage())</span>
+<span class="nc" id="L38">                .instanciaError(exception.getInstanciaError())</span>
+<span class="nc" id="L39">                .build();</span>
+
+<span class="nc" id="L41">        return write(exchange, body);</span>
+    }
+
+    private Mono&lt;Void&gt; write(ServerWebExchange exchange, ApiRespuestaExcepcionDTO body) {
+        byte[] responseBody;
+        try {
+<span class="nc" id="L47">            responseBody = objectMapper.writeValueAsBytes(body);</span>
+<span class="nc" id="L48">        } catch (JsonProcessingException ex) {</span>
+<span class="nc" id="L49">            return Mono.error(ex);</span>
+<span class="nc" id="L50">        }</span>
+
+<span class="nc" id="L52">        exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);</span>
+<span class="nc" id="L53">        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);</span>
+<span class="nc" id="L54">        return exchange.getResponse()</span>
+<span class="nc" id="L55">                .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(responseBody)));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

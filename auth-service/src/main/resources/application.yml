@@ -1,0 +1,19 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+  profiles:
+    active: local
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    instance-id: ${spring.application.name}:${server.port}:${random.value}
+
+jwt:
+  secret: ${JWT_SECRET:185ee9a8b7197f600752e1deb44cb3dfe89b14d1664f18ed85fc17d1a9c861ab}
+  expiration: ${JWT_EXPIRATION:3600000}

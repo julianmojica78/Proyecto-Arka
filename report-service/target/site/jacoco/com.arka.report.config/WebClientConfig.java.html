@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WebClientConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">report-service</a> &gt; <a href="index.source.html" class="el_package">com.arka.report.config</a> &gt; <span class="el_source">WebClientConfig.java</span></div><h1>WebClientConfig.java</h1><pre class="source lang-java linenums">package com.arka.report.config;
+
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import reactor.core.publisher.Mono;
+
+@Configuration
+<span class="fc" id="L18">public class WebClientConfig {</span>
+
+    @Bean
+    @LoadBalanced
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    public WebClient.Builder webClientBuilder(ExchangeFilterFunction bearerTokenRelayFilter) {
+<span class="fc" id="L24">        return WebClient.builder().filter(bearerTokenRelayFilter);</span>
+    }
+
+    @Bean
+    public ExchangeFilterFunction bearerTokenRelayFilter() {
+<span class="pc" id="L29">        return (request, next) -&gt; withBearerToken(request).flatMap(next::exchange);</span>
+    }
+
+    private Mono&lt;ClientRequest&gt; withBearerToken(ClientRequest request) {
+<span class="nc" id="L33">        return ReactiveSecurityContextHolder.getContext()</span>
+<span class="nc" id="L34">                .map(SecurityContext::getAuthentication)</span>
+<span class="nc" id="L35">                .filter(JwtAuthenticationToken.class::isInstance)</span>
+<span class="nc" id="L36">                .cast(JwtAuthenticationToken.class)</span>
+<span class="nc" id="L37">                .map(authentication -&gt; ClientRequest.from(request)</span>
+<span class="nc" id="L38">                        .headers(headers -&gt; headers.setBearerAuth(authentication.getToken().getTokenValue()))</span>
+<span class="nc" id="L39">                        .build())</span>
+<span class="nc" id="L40">                .defaultIfEmpty(request);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

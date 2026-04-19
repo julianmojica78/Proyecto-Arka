@@ -1,0 +1,22 @@
+spring:
+  r2dbc:
+    url: ${SPRING_R2DBC_URL}
+    username: ${SPRING_R2DBC_USERNAME}
+    password: ${SPRING_R2DBC_PASSWORD}
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+
+notification:
+  service:
+    base-url: ${NOTIFICATION_SERVICE_BASE_URL}
+
+services:
+  inventory:
+    base-url: ${SERVICES_INVENTORY_BASE_URL:http://inventory-service}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+  instance:
+    prefer-ip-address: true

@@ -1,0 +1,284 @@
+services:
+
+  postgres-auth:
+    image: postgres:15
+    container_name: postgres-auth
+    restart: always
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5432:5432"
+    volumes:
+      - auth_data:/var/lib/postgresql/data
+      - ./docker/postgres/auth:/docker-entrypoint-initdb.d
+    networks:
+      - arka-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+
+  postgres-inventory:
+    image: postgres:15
+    container_name: postgres-inventory
+    restart: always
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5433:5432"
+    volumes:
+      - inventory_data:/var/lib/postgresql/data
+      - ./docker/postgres/inventory:/docker-entrypoint-initdb.d
+    networks:
+      - arka-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+
+  postgres-order:
+    image: postgres:15
+    container_name: postgres-order
+    restart: always
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5434:5432"
+    volumes:
+      - order_data:/var/lib/postgresql/data
+      - ./docker/postgres/order:/docker-entrypoint-initdb.d
+    networks:
+      - arka-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+
+  postgres-notification:
+    image: postgres:15
+    container_name: postgres-notification
+    restart: always
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5435:5432"
+    volumes:
+      - notification_data:/var/lib/postgresql/data
+      - ./docker/postgres/notification:/docker-entrypoint-initdb.d
+    networks:
+      - arka-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+
+  kafka:
+    image: confluentinc/cp-kafka:8.0.4
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_INTERNAL://:29092,CONTROLLER://:29093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    networks:
+      - arka-net
+
+  eureka-server:
+    build: ./eureka-server
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8761:8761"
+    expose:
+      - "8761"
+    networks:
+      - arka-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8761/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  auth-service:
+    build: ./auth-service
+    restart: always
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-auth:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres-auth:5432/auth_db
+      SPRING_R2DBC_USERNAME: postgres
+      SPRING_R2DBC_PASSWORD: 1234
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      JWT_SECRET: 185ee9a8b7197f600752e1deb44cb3dfe89b14d1664f18ed85fc17d1a9c861ab
+    expose:
+      - "8081"
+    networks:
+      - arka-net
+
+  inventory-service:
+    build: ./inventory-service
+    restart: always
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-inventory:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres-inventory:5432/inventory_db
+      SPRING_R2DBC_USERNAME: postgres
+      SPRING_R2DBC_PASSWORD: 1234
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      JWT_SECRET: 185ee9a8b7197f600752e1deb44cb3dfe89b14d1664f18ed85fc17d1a9c861ab
+    expose:
+      - "8082"
+    networks:
+      - arka-net
+
+  order-service:
+    build: ./order-service
+    restart: always
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-order:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      notification-service:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres-order:5432/order_db
+      SPRING_R2DBC_USERNAME: postgres
+      SPRING_R2DBC_PASSWORD: 1234
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8084
+      SERVICES_INVENTORY_BASE_URL: http://inventory-service
+      JWT_SECRET: 185ee9a8b7197f600752e1deb44cb3dfe89b14d1664f18ed85fc17d1a9c861ab
+    expose:
+      - "8083"
+    networks:
+      - arka-net
+
+  notification-service:
+    build: ./notification-service
+    restart: always
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-notification:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres-notification:5432/notification_db
+      SPRING_R2DBC_USERNAME: postgres
+      SPRING_R2DBC_PASSWORD: 1234
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      JWT_SECRET: 185ee9a8b7197f600752e1deb44cb3dfe89b14d1664f18ed85fc17d1a9c861ab
+    expose:
+      - "8084"
+    networks:
+      - arka-net
+
+  report-service:
+    build: ./report-service
+    restart: always
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      inventory-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      SERVICES_INVENTORY_BASE_URL: http://inventory-service
+      SERVICES_ORDER_BASE_URL: http://order-service
+      JWT_SECRET: 185ee9a8b7197f600752e1deb44cb3dfe89b14d1664f18ed85fc17d1a9c861ab
+    expose:
+      - "8085"
+    networks:
+      - arka-net
+
+  api-gateway:
+    build: ./api-gateway
+    restart: always
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      report-service:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      JWT_SECRET: 185ee9a8b7197f600752e1deb44cb3dfe89b14d1664f18ed85fc17d1a9c861ab
+    ports:
+      - "8080:8080"
+    expose:
+      - "8080"
+    networks:
+      - arka-net
+
+networks:
+  arka-net:
+    driver: bridge
+
+volumes:
+  auth_data:
+  inventory_data:
+  order_data:
+  notification_data:

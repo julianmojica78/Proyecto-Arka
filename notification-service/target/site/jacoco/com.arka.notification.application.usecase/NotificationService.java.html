@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.arka.notification.application.usecase</a> &gt; <span class="el_source">NotificationService.java</span></div><h1>NotificationService.java</h1><pre class="source lang-java linenums">package com.arka.notification.application.usecase;
+
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
+
+import com.arka.notification.domain.exception.NotificationException;
+import com.arka.notification.domain.model.CartReminderCommand;
+import com.arka.notification.domain.model.NotificationRecord;
+import com.arka.notification.domain.model.NotificationType;
+import com.arka.notification.domain.port.in.CreateNotificationUseCase;
+import com.arka.notification.domain.port.in.GetNotificationsUseCase;
+import com.arka.notification.domain.port.out.NotificationRepositoryPort;
+
+import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+<span class="fc" id="L20">@RequiredArgsConstructor</span>
+public class NotificationService implements CreateNotificationUseCase, GetNotificationsUseCase {
+
+	private final NotificationRepositoryPort repository;
+
+	@Override
+	public Mono&lt;NotificationRecord&gt; createOrderConfirmed(Long orderId) {
+
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">		if (orderId == null) {</span>
+<span class="nc" id="L29">			return Mono.error(new NotificationException(&quot;Error de validación&quot;, &quot;NOTIF_001&quot;,</span>
+					&quot;El orderId no puede ser null&quot;, &quot;/notifications/order-confirmed&quot;, HttpStatus.BAD_REQUEST));
+		}
+
+<span class="fc" id="L33">		return repository</span>
+<span class="fc" id="L34">				.save(new NotificationRecord(null, orderId, null, null, NotificationType.ORDER_CONFIRMED,</span>
+<span class="fc" id="L35">						&quot;Tu pedido fue confirmado&quot;, LocalDateTime.now()))</span>
+<span class="pc" id="L36">				.onErrorMap(ex -&gt; new NotificationException(&quot;Error persistiendo notificación&quot;, &quot;NOTIF_002&quot;,</span>
+<span class="nc" id="L37">						ex.getMessage(), &quot;/notifications/order-confirmed&quot;, HttpStatus.INTERNAL_SERVER_ERROR));</span>
+	}
+
+	@Override
+	public Mono&lt;NotificationRecord&gt; createOrderCancelled(Long orderId, String reason) {
+
+<span class="nc bnc" id="L43" title="All 2 branches missed.">		if (orderId == null) {</span>
+<span class="nc" id="L44">			return Mono.error(new NotificationException(&quot;Error de validación&quot;, &quot;NOTIF_003&quot;, &quot;El orderId es obligatorio&quot;,</span>
+					&quot;/notifications/order-cancelled&quot;, HttpStatus.BAD_REQUEST));
+		}
+
+<span class="nc bnc" id="L48" title="All 4 branches missed.">		String suffix = (reason == null || reason.isBlank()) ? &quot;&quot; : &quot;: &quot; + reason;</span>
+
+<span class="nc" id="L50">		return repository</span>
+<span class="nc" id="L51">				.save(new NotificationRecord(null, orderId, null, null, NotificationType.ORDER_CANCELLED,</span>
+<span class="nc" id="L52">						&quot;Tu pedido fue cancelado&quot; + suffix, LocalDateTime.now()))</span>
+<span class="nc" id="L53">				.onErrorMap(ex -&gt; new NotificationException(&quot;Error persistiendo cancelación&quot;, &quot;NOTIF_004&quot;,</span>
+<span class="nc" id="L54">						ex.getMessage(), &quot;/notifications/order-cancelled&quot;, HttpStatus.INTERNAL_SERVER_ERROR));</span>
+	}
+
+	@Override
+	public Mono&lt;NotificationRecord&gt; createCartReminder(CartReminderCommand command) {
+
+<span class="pc bpc" id="L60" title="3 of 6 branches missed.">		if (command == null || command.getItems() == null || command.getItems().isEmpty()) {</span>
+<span class="nc" id="L61">			return Mono.error(new NotificationException(&quot;Error de validación&quot;, &quot;NOTIF_005&quot;, &quot;El carrito no tiene items&quot;,</span>
+					&quot;/notifications/cart-reminder&quot;, HttpStatus.BAD_REQUEST));
+		}
+
+<span class="fc" id="L65">		String itemsText = command.getItems().stream().map(item -&gt; item.getProductId() + &quot;x&quot; + item.getQuantity())</span>
+<span class="fc" id="L66">				.collect(Collectors.joining(&quot;; &quot;));</span>
+
+<span class="fc" id="L68">		return repository.save(new NotificationRecord(null, null, command.getCartId(), command.getCustomerId(),</span>
+<span class="fc" id="L69">				NotificationType.CART_REMINDER, &quot;Recordatorio de carrito pendiente: &quot; + itemsText, LocalDateTime.now()))</span>
+<span class="pc" id="L70">				.onErrorMap(ex -&gt; new NotificationException(&quot;Error guardando recordatorio&quot;, &quot;NOTIF_006&quot;,</span>
+<span class="nc" id="L71">						ex.getMessage(), &quot;/notifications/cart-reminder&quot;, HttpStatus.INTERNAL_SERVER_ERROR));</span>
+	}
+
+	@Override
+	public Flux&lt;NotificationRecord&gt; findByOrderId(Long orderId) {
+
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">		if (orderId == null) {</span>
+<span class="nc" id="L78">			return Flux.error(new NotificationException(&quot;Error de validación&quot;, &quot;NOTIF_007&quot;, &quot;orderId es obligatorio&quot;,</span>
+					&quot;/notifications/find&quot;, HttpStatus.BAD_REQUEST));
+		}
+
+<span class="fc" id="L82">		return repository.findByOrderId(orderId).switchIfEmpty(Flux.error(new NotificationException(&quot;No encontrado&quot;,</span>
+				&quot;NOTIF_008&quot;, &quot;No hay notificaciones para la orden&quot;, &quot;/notifications/find&quot;, HttpStatus.NOT_FOUND)));
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

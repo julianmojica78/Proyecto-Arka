@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LowStockReportService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">report-service</a> &gt; <a href="index.source.html" class="el_package">com.arka.report.application.usecase</a> &gt; <span class="el_source">LowStockReportService.java</span></div><h1>LowStockReportService.java</h1><pre class="source lang-java linenums">package com.arka.report.application.usecase;
+
+import org.springframework.http.HttpStatus;
+
+import com.arka.report.domain.exception.ReportException;
+import com.arka.report.domain.port.in.LowStockReportUseCase;
+import com.arka.report.domain.port.out.InventoryQueryPort;
+
+import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Mono;
+
+<span class="fc" id="L12">@RequiredArgsConstructor</span>
+public class LowStockReportService implements LowStockReportUseCase {
+
+	private static final int DEFAULT_THRESHOLD = 10;
+	private static final String INSTANCE_REPORT = &quot;/reports/low-stock&quot;;
+
+	private final InventoryQueryPort inventoryQueryPort;
+
+	@Override
+	public Mono&lt;String&gt; generateCsv(Integer threshold) {
+
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">		int effectiveThreshold = threshold != null ? threshold : DEFAULT_THRESHOLD;</span>
+
+		// 🔴 Validación
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">		if (effectiveThreshold &lt; 0) {</span>
+<span class="nc" id="L27">			return Mono.error(new ReportException(&quot;Error de validación&quot;, &quot;REPORT_001&quot;,</span>
+					&quot;El threshold no puede ser negativo&quot;, INSTANCE_REPORT, HttpStatus.BAD_REQUEST));
+		}
+
+<span class="fc" id="L31">		return inventoryQueryPort.findAllProducts()</span>
+
+				// 🔥 Validación defensiva de datos
+<span class="pc bpc" id="L34" title="1 of 4 branches missed.">				.filter(product -&gt; product.getStock() != null &amp;&amp; product.getStock() &lt; effectiveThreshold)</span>
+
+<span class="fc" id="L36">				.map(product -&gt; {</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">					if (product.getId() == null) {</span>
+<span class="nc" id="L38">						throw new ReportException(&quot;Error de datos&quot;, &quot;REPORT_002&quot;, &quot;Producto sin id&quot;, INSTANCE_REPORT,</span>
+								HttpStatus.INTERNAL_SERVER_ERROR);
+					}
+
+<span class="fc" id="L42">					return String.join(&quot;,&quot;, product.getId().toString(), quote(product.getName()),</span>
+<span class="fc" id="L43">							quote(product.getCategory()), product.getStock().toString(), product.getPrice().toString());</span>
+				})
+
+<span class="fc" id="L46">				.collectList()</span>
+
+				// 🔥 Caso sin datos (opcional pero recomendado)
+<span class="fc" id="L49">				.flatMap(lines -&gt; {</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">					if (lines.isEmpty()) {</span>
+<span class="nc" id="L51">						return Mono.error(new ReportException(&quot;Sin resultados&quot;, &quot;REPORT_003&quot;,</span>
+								&quot;No existen productos con bajo stock&quot;, INSTANCE_REPORT, HttpStatus.NOT_FOUND));
+					}
+
+<span class="fc" id="L55">					StringBuilder csv = new StringBuilder(&quot;id,name,category,stock,price\n&quot;);</span>
+<span class="fc" id="L56">					lines.forEach(line -&gt; csv.append(line).append('\n'));</span>
+<span class="fc" id="L57">					return Mono.just(csv.toString());</span>
+				})
+
+				// 🔥 Manejo global de errores
+<span class="fc" id="L61">				.onErrorMap(ex -&gt; {</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">					if (ex instanceof ReportException) {</span>
+<span class="nc" id="L63">						return ex;</span>
+					}
+
+<span class="nc" id="L66">					return new ReportException(&quot;Error generando reporte&quot;, &quot;REPORT_004&quot;,</span>
+<span class="nc" id="L67">							&quot;Ocurrió un error generando el CSV: &quot; + ex.getMessage(), INSTANCE_REPORT,</span>
+							HttpStatus.INTERNAL_SERVER_ERROR);
+				});
+	}
+
+	private String quote(String value) {
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">		return &quot;\&quot;&quot; + (value == null ? &quot;&quot; : value.replace(&quot;\&quot;&quot;, &quot;\&quot;\&quot;&quot;)) + &quot;\&quot;&quot;;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

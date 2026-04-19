@@ -1,0 +1,38 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://eureka-server:8761/eureka}
+  instance:
+    prefer-ip-address: true
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/auth/**
+
+        - id: inventory-service
+          uri: lb://INVENTORY-SERVICE
+          predicates:
+            - Path=/products/**
+
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/orders/**,/carts/**
+
+        - id: notification-service
+          uri: http://${NOTIFICATION_SERVICE_HOST:notification-service}:${NOTIFICATION_SERVICE_PORT:8084}
+          predicates:
+            - Path=/notifications/**
+
+        - id: report-service
+          uri: lb://REPORT-SERVICE
+          predicates:
+            - Path=/reports/**

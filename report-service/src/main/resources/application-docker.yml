@@ -1,0 +1,12 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://eureka-server:8761/eureka}
+  instance:
+    prefer-ip-address: true
+
+services:
+  inventory:
+    base-url: ${SERVICES_INVENTORY_BASE_URL:http://inventory-service}
+  order:
+    base-url: ${SERVICES_ORDER_BASE_URL:http://order-service}

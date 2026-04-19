@@ -1,0 +1,74 @@
+{
+  "info": {
+    "_postman_id": "bcfc99c7-ffbd-45fb-a613-6a08784a4952",
+    "name": "Proyecto Ark - Report Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Coleccion de reportes CSV. Requiere Bearer token."
+  },
+  "item": [
+    {
+      "name": "Reporte de productos con bajo stock",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reports/products/low-stock?threshold={{threshold}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reports",
+            "products",
+            "low-stock"
+          ],
+          "query": [
+            {
+              "key": "threshold",
+              "value": "{{threshold}}"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Reporte de ventas semanales",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reports/sales/weekly",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reports",
+            "sales",
+            "weekly"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "threshold",
+      "value": "5"
+    }
+  ]
+}

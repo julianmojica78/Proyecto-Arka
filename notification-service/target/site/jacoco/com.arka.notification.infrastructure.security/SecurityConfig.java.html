@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SecurityConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.arka.notification.infrastructure.security</a> &gt; <span class="el_source">SecurityConfig.java</span></div><h1>SecurityConfig.java</h1><pre class="source lang-java linenums">package com.arka.notification.infrastructure.security;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import javax.crypto.spec.SecretKeySpec;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
+
+import reactor.core.publisher.Mono;
+
+@Configuration
+@EnableWebFluxSecurity
+@EnableReactiveMethodSecurity
+<span class="nc" id="L34">public class SecurityConfig {</span>
+
+    @Bean
+    public SecurityWebFilterChain securityWebFilterChain(
+            ServerHttpSecurity http,
+            ReactiveJwtDecoder jwtDecoder,
+            SecurityErrorResponseWriter securityErrorResponseWriter) {
+
+<span class="nc" id="L42">        return http</span>
+<span class="nc" id="L43">                .csrf(ServerHttpSecurity.CsrfSpec::disable)</span>
+<span class="nc" id="L44">                .formLogin(ServerHttpSecurity.FormLoginSpec::disable)</span>
+<span class="nc" id="L45">                .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)</span>
+<span class="nc" id="L46">                .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())</span>
+<span class="nc" id="L47">                .exceptionHandling(exceptions -&gt; exceptions</span>
+<span class="nc" id="L48">                        .authenticationEntryPoint((exchange, ex) -&gt; securityErrorResponseWriter.writeForbidden(</span>
+<span class="nc" id="L49">                                exchange,</span>
+<span class="nc" id="L50">                                &quot;Debe iniciar sesion con un token valido para acceder a este recurso&quot;))</span>
+<span class="nc" id="L51">                        .accessDeniedHandler((exchange, ex) -&gt; securityErrorResponseWriter.writeForbidden(</span>
+<span class="nc" id="L52">                                exchange,</span>
+<span class="nc" id="L53">                                &quot;No tiene el rol requerido para acceder a este recurso&quot;)))</span>
+<span class="nc" id="L54">                .authorizeExchange(exchange -&gt; exchange</span>
+<span class="nc" id="L55">                        .pathMatchers(HttpMethod.OPTIONS, &quot;/**&quot;).permitAll()</span>
+<span class="nc" id="L56">                        .pathMatchers(HttpMethod.GET, &quot;/notifications/orders/*&quot;).hasRole(&quot;ADMIN&quot;)</span>
+<span class="nc" id="L57">                        .pathMatchers(HttpMethod.POST, &quot;/notifications/cart-reminders&quot;).hasRole(&quot;ADMIN&quot;)</span>
+<span class="nc" id="L58">                        .anyExchange().authenticated())</span>
+<span class="nc" id="L59">                .oauth2ResourceServer(oauth2 -&gt; oauth2</span>
+<span class="nc" id="L60">                        .authenticationEntryPoint((exchange, ex) -&gt; securityErrorResponseWriter.writeForbidden(</span>
+<span class="nc" id="L61">                                exchange,</span>
+<span class="nc" id="L62">                                &quot;Debe iniciar sesion con un token valido para acceder a este recurso&quot;))</span>
+<span class="nc" id="L63">                        .accessDeniedHandler((exchange, ex) -&gt; securityErrorResponseWriter.writeForbidden(</span>
+<span class="nc" id="L64">                                exchange,</span>
+<span class="nc" id="L65">                                &quot;No tiene el rol requerido para acceder a este recurso&quot;))</span>
+<span class="nc" id="L66">                        .jwt(jwt -&gt; jwt</span>
+<span class="nc" id="L67">                                .jwtDecoder(jwtDecoder)</span>
+<span class="nc" id="L68">                                .jwtAuthenticationConverter(jwtAuthenticationConverter())))</span>
+<span class="nc" id="L69">                .build();</span>
+    }
+
+    @Bean
+    public ReactiveJwtDecoder jwtDecoder(@Value(&quot;${jwt.secret}&quot;) String secret) {
+<span class="nc" id="L74">        SecretKeySpec secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), &quot;HmacSHA512&quot;);</span>
+<span class="nc" id="L75">        return NimbusReactiveJwtDecoder.withSecretKey(secretKey)</span>
+<span class="nc" id="L76">                .macAlgorithm(MacAlgorithm.HS512)</span>
+<span class="nc" id="L77">                .build();</span>
+    }
+
+    private Converter&lt;Jwt, Mono&lt;AbstractAuthenticationToken&gt;&gt; jwtAuthenticationConverter() {
+<span class="nc" id="L81">        return jwt -&gt; Mono.just(new JwtAuthenticationToken(jwt, extractAuthorities(jwt), jwt.getSubject()));</span>
+    }
+
+    private Collection&lt;GrantedAuthority&gt; extractAuthorities(Jwt jwt) {
+<span class="nc" id="L85">        Object roleClaim = jwt.getClaims().get(&quot;role&quot;);</span>
+<span class="nc" id="L86">        List&lt;GrantedAuthority&gt; authorities = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (roleClaim instanceof Collection&lt;?&gt; roles) {</span>
+<span class="nc" id="L89">            roles.forEach(role -&gt; addAuthority(authorities, role));</span>
+<span class="nc" id="L90">        } else {</span>
+<span class="nc" id="L91">            addAuthority(authorities, roleClaim);</span>
+        }
+
+<span class="nc" id="L94">        return authorities;</span>
+    }
+
+    private void addAuthority(List&lt;GrantedAuthority&gt; authorities, Object role) {
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (role == null) {</span>
+<span class="nc" id="L99">            return;</span>
+        }
+
+<span class="nc" id="L102">        String roleName = role.toString().trim();</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (roleName.isBlank()) {</span>
+<span class="nc" id="L104">            return;</span>
+        }
+
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (!roleName.startsWith(&quot;ROLE_&quot;)) {</span>
+<span class="nc" id="L108">            roleName = &quot;ROLE_&quot; + roleName;</span>
+        }
+
+<span class="nc" id="L111">        authorities.add(new SimpleGrantedAuthority(roleName));</span>
+<span class="nc" id="L112">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

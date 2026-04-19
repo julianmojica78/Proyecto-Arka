@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificationHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.arka.notification.infrastructure.adapter.in.web</a> &gt; <span class="el_source">NotificationHandler.java</span></div><h1>NotificationHandler.java</h1><pre class="source lang-java linenums">package com.arka.notification.infrastructure.adapter.in.web;
+
+import com.arka.notification.domain.model.CartReminderCommand;
+import com.arka.notification.domain.model.CartReminderItem;
+import com.arka.notification.domain.port.in.CreateNotificationUseCase;
+import com.arka.notification.domain.port.in.GetNotificationsUseCase;
+import com.arka.notification.infrastructure.adapter.in.web.dto.CartReminderRequest;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
+
+import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Mono;
+
+@Component
+<span class="fc" id="L18">@RequiredArgsConstructor</span>
+public class NotificationHandler {
+
+    private final CreateNotificationUseCase createNotificationUseCase;
+    private final GetNotificationsUseCase getNotificationsUseCase;
+
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public Mono&lt;ServerResponse&gt; getByOrderId(ServerRequest request) {
+<span class="nc" id="L26">        Long orderId = Long.valueOf(request.pathVariable(&quot;orderId&quot;));</span>
+<span class="nc" id="L27">        return ServerResponse.ok().body(getNotificationsUseCase.findByOrderId(orderId), Object.class);</span>
+    }
+
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public Mono&lt;ServerResponse&gt; createCartReminder(ServerRequest request) {
+<span class="nc" id="L32">        return request.bodyToMono(CartReminderRequest.class)</span>
+<span class="nc" id="L33">                .map(body -&gt; new CartReminderCommand(</span>
+<span class="nc" id="L34">                        body.getCartId(),</span>
+<span class="nc" id="L35">                        body.getCustomerId(),</span>
+<span class="nc" id="L36">                        body.getItems().stream()</span>
+<span class="nc" id="L37">                                .map(item -&gt; new CartReminderItem(item.getProductId(), item.getQuantity()))</span>
+<span class="nc" id="L38">                                .toList()))</span>
+<span class="nc" id="L39">                .flatMap(createNotificationUseCase::createCartReminder)</span>
+<span class="nc" id="L40">                .flatMap(notification -&gt; ServerResponse.ok().bodyValue(notification))</span>
+<span class="nc" id="L41">                .onErrorResume(error -&gt; ServerResponse.badRequest().bodyValue(error.getMessage()));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

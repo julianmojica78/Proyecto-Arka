@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValidationHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.arka.notification.domain.exception</a> &gt; <span class="el_source">ValidationHandler.java</span></div><h1>ValidationHandler.java</h1><pre class="source lang-java linenums">package com.arka.notification.domain.exception;
+
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.codec.DecodingException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.support.WebExchangeBindException;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.server.ServerWebInputException;
+
+import com.arka.notification.domain.exception.dto.ApiRespuestaExcepcionDTO;
+
+@RestControllerAdvice
+<span class="fc" id="L20">public class ValidationHandler {</span>
+
+<span class="fc" id="L22">	private static final Logger LOGGER = LoggerFactory.getLogger(ValidationHandler.class);</span>
+
+	private static final String TIPO_VALIDAR_PETICIONES = &quot;/validaciones/peticiones&quot;;
+	private static final String TIPO_VALIDAR_RECURSOS = &quot;/validaciones/recursos&quot;;
+	private static final String TIPO_VALIDAR_INTERNAL = &quot;/error/interno&quot;;
+
+	@ExceptionHandler(ArgumentRequiredException.class)
+	public ResponseEntity&lt;ApiRespuestaExcepcionDTO&gt; handleArgumentRequiredException(ArgumentRequiredException ex) {
+<span class="nc" id="L30">		return buildResponse(HttpStatus.BAD_REQUEST, TIPO_VALIDAR_PETICIONES, &quot;Error validación de parámetro&quot;, &quot;E-010&quot;,</span>
+<span class="nc" id="L31">				ex.getMessage());</span>
+	}
+
+	@ExceptionHandler(NotFoundException.class)
+	public ResponseEntity&lt;ApiRespuestaExcepcionDTO&gt; handleNotFoundException(NotFoundException ex) {
+<span class="nc" id="L36">		return buildResponse(HttpStatus.NOT_FOUND, TIPO_VALIDAR_RECURSOS, &quot;Recurso no encontrado&quot;, &quot;E-404&quot;,</span>
+<span class="nc" id="L37">				ex.getMessage());</span>
+	}
+
+	@ExceptionHandler(WebExchangeBindException.class)
+	public ResponseEntity&lt;List&lt;ApiRespuestaExcepcionDTO&gt;&gt; handleWebExchangeBindException(WebExchangeBindException ex) {
+
+<span class="nc" id="L43">		List&lt;ApiRespuestaExcepcionDTO&gt; errores = ex.getBindingResult().getAllErrors().stream().map(error -&gt; {</span>
+<span class="nc" id="L44">			String detalle = error.getDefaultMessage();</span>
+
+<span class="nc bnc" id="L46" title="All 2 branches missed.">			if (error instanceof FieldError fieldError) {</span>
+<span class="nc" id="L47">				detalle = String.format(&quot;%s, campo del error: %s&quot;, error.getDefaultMessage(), fieldError.getField());</span>
+			}
+
+<span class="nc" id="L50">			return buildError(TIPO_VALIDAR_PETICIONES, &quot;Error validación de parámetro&quot;, &quot;E-010&quot;, detalle);</span>
+<span class="nc" id="L51">		}).toList();</span>
+
+<span class="nc" id="L53">		return ResponseEntity.badRequest().body(errores);</span>
+	}
+
+	@ExceptionHandler(ServerWebInputException.class)
+	public ResponseEntity&lt;ApiRespuestaExcepcionDTO&gt; handleServerWebInputException(ServerWebInputException ex) {
+<span class="nc" id="L58">		return buildResponse(HttpStatus.BAD_REQUEST, TIPO_VALIDAR_PETICIONES, &quot;Error de entrada en la petición&quot;,</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">				&quot;E-011&quot;, ex.getReason() != null ? ex.getReason() : ex.getMessage());</span>
+	}
+
+	@ExceptionHandler(DecodingException.class)
+	public ResponseEntity&lt;ApiRespuestaExcepcionDTO&gt; handleDecodingException(DecodingException ex) {
+<span class="nc" id="L64">		return buildResponse(HttpStatus.BAD_REQUEST, TIPO_VALIDAR_PETICIONES,</span>
+<span class="nc" id="L65">				&quot;Error al interpretar el cuerpo de la petición&quot;, &quot;E-012&quot;, ex.getMessage());</span>
+	}
+
+	@ExceptionHandler(ResponseStatusException.class)
+	public ResponseEntity&lt;ApiRespuestaExcepcionDTO&gt; handleResponseStatusException(ResponseStatusException ex) {
+
+<span class="nc" id="L71">		HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());</span>
+
+<span class="nc" id="L73">		return buildResponse(status, resolveTipo(status.value()), &quot;Error al procesar la petición&quot;,</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">				String.valueOf(status.value()), ex.getReason() != null ? ex.getReason() : ex.getMessage());</span>
+	}
+
+	@ExceptionHandler(IllegalArgumentException.class)
+	public ResponseEntity&lt;ApiRespuestaExcepcionDTO&gt; handleIllegalArgumentException(IllegalArgumentException ex) {
+<span class="nc" id="L79">		return buildResponse(HttpStatus.BAD_REQUEST, TIPO_VALIDAR_PETICIONES, &quot;Argumento inválido&quot;, &quot;E-013&quot;,</span>
+<span class="nc" id="L80">				ex.getMessage());</span>
+	}
+
+	@ExceptionHandler(NullPointerException.class)
+	public ResponseEntity&lt;ApiRespuestaExcepcionDTO&gt; handleNullPointerException(NullPointerException ex) {
+
+<span class="nc" id="L86">		LOGGER.error(&quot;Error generado por NullPointerException&quot;, ex);</span>
+
+<span class="nc" id="L88">		return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, TIPO_VALIDAR_INTERNAL, &quot;Error interno del servidor&quot;,</span>
+				&quot;E-500&quot;, &quot;Se presentó un error interno inesperado&quot;);
+	}
+
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity&lt;ApiRespuestaExcepcionDTO&gt; handleException(Exception ex) {
+
+<span class="nc" id="L95">		LOGGER.error(&quot;Error no controlado&quot;, ex);</span>
+
+<span class="nc" id="L97">		return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, TIPO_VALIDAR_INTERNAL, &quot;Error interno del servidor&quot;,</span>
+				&quot;E-500&quot;, &quot;Se presentó un error interno inesperado&quot;);
+	}
+
+	private ResponseEntity&lt;ApiRespuestaExcepcionDTO&gt; buildResponse(HttpStatus status, String tipo, String mensaje,
+			String codigo, String detalle) {
+
+<span class="nc" id="L104">		return ResponseEntity.status(status).body(buildError(tipo, mensaje, codigo, detalle));</span>
+	}
+
+	private ApiRespuestaExcepcionDTO buildError(String tipo, String mensaje, String codigo, String detalle) {
+
+<span class="nc" id="L109">		ApiRespuestaExcepcionDTO error = new ApiRespuestaExcepcionDTO(tipo, mensaje, codigo, null);</span>
+<span class="nc" id="L110">		error.setDetalleError(detalle);</span>
+<span class="nc" id="L111">		return error;</span>
+	}
+
+	private String resolveTipo(int statusCode) {
+<span class="nc bnc" id="L115" title="All 4 branches missed.">		if (statusCode &gt;= 400 &amp;&amp; statusCode &lt; 500) {</span>
+<span class="nc" id="L116">			return TIPO_VALIDAR_PETICIONES;</span>
+		}
+<span class="nc" id="L118">		return TIPO_VALIDAR_INTERNAL;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
