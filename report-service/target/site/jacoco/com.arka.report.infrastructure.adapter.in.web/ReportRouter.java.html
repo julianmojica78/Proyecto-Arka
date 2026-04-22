@@ -1,20 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReportRouter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">report-service</a> &gt; <a href="index.source.html" class="el_package">com.arka.report.infrastructure.adapter.in.web</a> &gt; <span class="el_source">ReportRouter.java</span></div><h1>ReportRouter.java</h1><pre class="source lang-java linenums">package com.arka.report.infrastructure.adapter.in.web;
 
+import org.springdoc.core.annotations.RouterOperation;
+import org.springdoc.core.annotations.RouterOperations;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 @Configuration
-<span class="fc" id="L10">public class ReportRouter {</span>
+<span class="fc" id="L21">public class ReportRouter {</span>
 
     @Bean
+    @RouterOperations({
+            @RouterOperation(
+                    path = &quot;/reports/products/low-stock&quot;,
+                    produces = &quot;text/csv&quot;,
+                    method = RequestMethod.GET,
+                    beanClass = ReportHandler.class,
+                    beanMethod = &quot;lowStock&quot;,
+                    operation = @Operation(
+                            operationId = &quot;generateLowStockReport&quot;,
+                            tags = &quot;Reportes&quot;,
+                            summary = &quot;Generar reporte de bajo stock&quot;,
+                            description = &quot;Genera un archivo CSV con productos cuyo stock este por debajo del umbral indicado. Requiere rol ADMIN.&quot;,
+                            parameters = @Parameter(
+                                    name = &quot;threshold&quot;,
+                                    in = ParameterIn.QUERY,
+                                    required = false,
+                                    description = &quot;Umbral maximo de stock para incluir productos en el reporte.&quot;,
+                                    schema = @Schema(implementation = Integer.class)),
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = &quot;200&quot;,
+                                            description = &quot;CSV generado. Incluye Content-Disposition con filename=low-stock-report.csv.&quot;,
+                                            content = @Content(mediaType = &quot;text/csv&quot;, schema = @Schema(implementation = String.class))),
+                                    @ApiResponse(responseCode = &quot;401&quot;, description = &quot;Token JWT ausente o invalido.&quot;),
+                                    @ApiResponse(responseCode = &quot;403&quot;, description = &quot;El usuario no tiene rol ADMIN.&quot;)
+                            })),
+            @RouterOperation(
+                    path = &quot;/reports/sales/weekly&quot;,
+                    produces = &quot;text/csv&quot;,
+                    method = RequestMethod.GET,
+                    beanClass = ReportHandler.class,
+                    beanMethod = &quot;weeklySales&quot;,
+                    operation = @Operation(
+                            operationId = &quot;generateWeeklySalesReport&quot;,
+                            tags = &quot;Reportes&quot;,
+                            summary = &quot;Generar reporte semanal de ventas&quot;,
+                            description = &quot;Genera un archivo CSV con el resumen semanal de ventas. Requiere rol ADMIN.&quot;,
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = &quot;200&quot;,
+                                            description = &quot;CSV generado. Incluye Content-Disposition con filename=weekly-sales-report.csv.&quot;,
+                                            content = @Content(mediaType = &quot;text/csv&quot;, schema = @Schema(implementation = String.class))),
+                                    @ApiResponse(responseCode = &quot;401&quot;, description = &quot;Token JWT ausente o invalido.&quot;),
+                                    @ApiResponse(responseCode = &quot;403&quot;, description = &quot;El usuario no tiene rol ADMIN.&quot;)
+                            }))
+    })
     public RouterFunction&lt;ServerResponse&gt; reportRoutes(ReportHandler handler) {
-<span class="fc" id="L14">        return RouterFunctions.route()</span>
-<span class="fc" id="L15">                .GET(&quot;/reports/products/low-stock&quot;, handler::lowStock)</span>
-<span class="fc" id="L16">                .GET(&quot;/reports/sales/weekly&quot;, handler::weeklySales)</span>
-<span class="fc" id="L17">                .build();</span>
+<span class="fc" id="L71">        return RouterFunctions.route()</span>
+<span class="fc" id="L72">                .GET(&quot;/reports/products/low-stock&quot;, handler::lowStock)</span>
+<span class="fc" id="L73">                .GET(&quot;/reports/sales/weekly&quot;, handler::weeklySales)</span>
+<span class="fc" id="L74">                .build();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

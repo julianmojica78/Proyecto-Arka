@@ -7,6 +7,15 @@ spring:
   profiles:
     active: local
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
+  override-with-generic-response: false
+
 eureka:
   client:
     register-with-eureka: true
@@ -16,9 +25,9 @@ eureka:
 
 services:
   inventory:
-    base-url: http://inventory-service
+    base-url: http://INVENTORY-SERVICE
   order:
-    base-url: http://order-service
+    base-url: http://ORDER-SERVICE
 
 jwt:
   secret: ${JWT_SECRET:185ee9a8b7197f600752e1deb44cb3dfe89b14d1664f18ed85fc17d1a9c861ab}

@@ -16,7 +16,7 @@ public class InventoryHttpClientAdapter implements InventoryQueryPort {
 
     public InventoryHttpClientAdapter(
             WebClient.Builder webClientBuilder,
-            @Value("${services.inventory.base-url:http://localhost:8082}") String inventoryBaseUrl) {
+            @Value("${services.inventory.base-url:http://INVENTORY-SERVICE}") String inventoryBaseUrl) {
         this.webClient = webClientBuilder.baseUrl(inventoryBaseUrl).build();
     }
 

@@ -9,6 +9,41 @@ spring:
   cloud:
     gateway:
       routes:
+        - id: auth-service-openapi
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/docs/auth-service/api,/docs/auth-service/api/**
+          filters:
+            - RewritePath=/docs/auth-service/(?<segment>.*), /$\{segment}
+
+        - id: inventory-service-openapi
+          uri: lb://INVENTORY-SERVICE
+          predicates:
+            - Path=/docs/inventory-service/api,/docs/inventory-service/api/**
+          filters:
+            - RewritePath=/docs/inventory-service/(?<segment>.*), /$\{segment}
+
+        - id: order-service-openapi
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/docs/order-service/api,/docs/order-service/api/**
+          filters:
+            - RewritePath=/docs/order-service/(?<segment>.*), /$\{segment}
+
+        - id: notification-service-openapi
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/docs/notification-service/api,/docs/notification-service/api/**
+          filters:
+            - RewritePath=/docs/notification-service/(?<segment>.*), /$\{segment}
+
+        - id: report-service-openapi
+          uri: lb://REPORT-SERVICE
+          predicates:
+            - Path=/docs/report-service/api,/docs/report-service/api/**
+          filters:
+            - RewritePath=/docs/report-service/(?<segment>.*), /$\{segment}
+
         - id: auth-service
           uri: lb://AUTH-SERVICE
           predicates:

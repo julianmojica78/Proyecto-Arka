@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 
 import com.arka.inventory.domain.exception.InventoryException;
 import com.arka.inventory.domain.model.Product;
+import com.arka.inventory.domain.model.StockChangeReason;
 import com.arka.inventory.domain.model.StockItem;
 import com.arka.inventory.domain.port.in.UpdateStockUseCase;
 import com.arka.inventory.domain.port.out.ProductRepositoryPort;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 public class UpdateStockService implements UpdateStockUseCase {
 
     private final ProductRepositoryPort repository;
+    private final StockChangeRecorder stockChangeRecorder;
 
     @Override
     public Mono<Void> updateStock(List<StockItem> items) {
@@ -42,12 +44,16 @@ public class UpdateStockService implements UpdateStockUseCase {
             return Mono.error(new InventoryException("Stock Insuficiente..", "E-10", "El Producto: " + product.getName() + ", No Cuenta con Stock Suficiente, para reservar..", "UpdateStockService.reserve", HttpStatus.NOT_FOUND));
         }
 
-        product.setStock(product.getStock() - item.getQuantity());
-        return repository.save(product);
+        return stockChangeRecorder.record(
+                product,
+                product.getStock() - item.getQuantity(),
+                StockChangeReason.ORDER_RESERVED);
     }
 
     private Mono<Product> restore(Product product, StockItem item) {
-        product.setStock(product.getStock() + item.getQuantity());
-        return repository.save(product);
+        return stockChangeRecorder.record(
+                product,
+                product.getStock() + item.getQuantity(),
+                StockChangeReason.STOCK_RESTORED);
     }
 }

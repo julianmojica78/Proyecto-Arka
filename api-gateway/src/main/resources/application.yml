@@ -14,6 +14,24 @@ spring:
         locator:
           enabled: false
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: auth-service
+        url: /v3/api-docs/auth
+      - name: inventory-service
+        url: /v3/api-docs/inventory
+      - name: order-service
+        url: /v3/api-docs/order
+      - name: notification-service
+        url: /v3/api-docs/notification
+      - name: report-service
+        url: /v3/api-docs/report
+
 eureka:
   client:
     register-with-eureka: true

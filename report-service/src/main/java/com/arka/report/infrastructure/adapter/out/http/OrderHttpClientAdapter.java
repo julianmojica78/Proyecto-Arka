@@ -18,7 +18,7 @@ public class OrderHttpClientAdapter implements OrderQueryPort {
 
     public OrderHttpClientAdapter(
             WebClient.Builder webClientBuilder,
-            @Value("${services.order.base-url:http://localhost:8083}") String orderBaseUrl) {
+            @Value("${services.order.base-url:http://ORDER-SERVICE}") String orderBaseUrl) {
         this.webClient = webClientBuilder.baseUrl(orderBaseUrl).build();
     }
 

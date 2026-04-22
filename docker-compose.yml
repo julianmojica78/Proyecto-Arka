@@ -195,7 +195,7 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
       NOTIFICATION_SERVICE_BASE_URL: http://notification-service:8084
-      SERVICES_INVENTORY_BASE_URL: http://inventory-service
+      SERVICES_INVENTORY_BASE_URL: http://INVENTORY-SERVICE
       JWT_SECRET: 185ee9a8b7197f600752e1deb44cb3dfe89b14d1664f18ed85fc17d1a9c861ab
     expose:
       - "8083"
@@ -238,8 +238,8 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
-      SERVICES_INVENTORY_BASE_URL: http://inventory-service
-      SERVICES_ORDER_BASE_URL: http://order-service
+      SERVICES_INVENTORY_BASE_URL: http://INVENTORY-SERVICE
+      SERVICES_ORDER_BASE_URL: http://ORDER-SERVICE
       JWT_SECRET: 185ee9a8b7197f600752e1deb44cb3dfe89b14d1664f18ed85fc17d1a9c861ab
     expose:
       - "8085"

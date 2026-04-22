@@ -1,20 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotificationRouter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">notification-service</a> &gt; <a href="index.source.html" class="el_package">com.arka.notification.infrastructure.adapter.in.web</a> &gt; <span class="el_source">NotificationRouter.java</span></div><h1>NotificationRouter.java</h1><pre class="source lang-java linenums">package com.arka.notification.infrastructure.adapter.in.web;
 
+import org.springdoc.core.annotations.RouterOperation;
+import org.springdoc.core.annotations.RouterOperations;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
+import com.arka.notification.domain.model.NotificationRecord;
+import com.arka.notification.infrastructure.adapter.in.web.dto.CartReminderRequest;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 @Configuration
-<span class="fc" id="L10">public class NotificationRouter {</span>
+<span class="fc" id="L26">public class NotificationRouter {</span>
 
     @Bean
+    @RouterOperations({
+            @RouterOperation(
+                    path = &quot;/notifications/orders/{orderId}&quot;,
+                    produces = MediaType.APPLICATION_JSON_VALUE,
+                    method = RequestMethod.GET,
+                    beanClass = NotificationHandler.class,
+                    beanMethod = &quot;getByOrderId&quot;,
+                    operation = @Operation(
+                            operationId = &quot;getNotificationsByOrderId&quot;,
+                            tags = &quot;Notificaciones&quot;,
+                            summary = &quot;Consultar notificaciones por orden&quot;,
+                            description = &quot;Retorna las notificaciones asociadas a una orden. Requiere rol ADMIN.&quot;,
+                            parameters = @Parameter(
+                                    name = &quot;orderId&quot;,
+                                    in = ParameterIn.PATH,
+                                    required = true,
+                                    description = &quot;Identificador de la orden.&quot;,
+                                    schema = @Schema(implementation = Long.class)),
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = &quot;200&quot;,
+                                            description = &quot;Notificaciones encontradas.&quot;,
+                                            content = @Content(array = @ArraySchema(schema = @Schema(implementation = NotificationRecord.class)))),
+                                    @ApiResponse(responseCode = &quot;401&quot;, description = &quot;Token JWT ausente o invalido.&quot;),
+                                    @ApiResponse(responseCode = &quot;403&quot;, description = &quot;El usuario no tiene rol ADMIN.&quot;)
+                            })),
+            @RouterOperation(
+                    path = &quot;/notifications/cart-reminders&quot;,
+                    produces = MediaType.APPLICATION_JSON_VALUE,
+                    method = RequestMethod.POST,
+                    beanClass = NotificationHandler.class,
+                    beanMethod = &quot;createCartReminder&quot;,
+                    operation = @Operation(
+                            operationId = &quot;createCartReminderNotification&quot;,
+                            tags = &quot;Notificaciones&quot;,
+                            summary = &quot;Crear notificacion de recordatorio de carrito&quot;,
+                            description = &quot;Crea una notificacion para recordar un carrito abandonado. Requiere rol ADMIN.&quot;,
+                            requestBody = @RequestBody(
+                                    required = true,
+                                    description = &quot;Datos del carrito y sus items para construir el recordatorio.&quot;,
+                                    content = @Content(schema = @Schema(implementation = CartReminderRequest.class))),
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = &quot;200&quot;,
+                                            description = &quot;Notificacion creada.&quot;,
+                                            content = @Content(schema = @Schema(implementation = NotificationRecord.class))),
+                                    @ApiResponse(
+                                            responseCode = &quot;400&quot;,
+                                            description = &quot;Datos invalidos para crear el recordatorio.&quot;,
+                                            content = @Content(schema = @Schema(implementation = String.class))),
+                                    @ApiResponse(responseCode = &quot;401&quot;, description = &quot;Token JWT ausente o invalido.&quot;),
+                                    @ApiResponse(responseCode = &quot;403&quot;, description = &quot;El usuario no tiene rol ADMIN.&quot;)
+                            }))
+    })
     public RouterFunction&lt;ServerResponse&gt; notificationRoutes(NotificationHandler handler) {
-<span class="fc" id="L14">        return RouterFunctions.route()</span>
-<span class="fc" id="L15">                .GET(&quot;/notifications/orders/{orderId}&quot;, handler::getByOrderId)</span>
-<span class="fc" id="L16">                .POST(&quot;/notifications/cart-reminders&quot;, handler::createCartReminder)</span>
-<span class="fc" id="L17">                .build();</span>
+<span class="fc" id="L84">        return RouterFunctions.route()</span>
+<span class="fc" id="L85">                .GET(&quot;/notifications/orders/{orderId}&quot;, handler::getByOrderId)</span>
+<span class="fc" id="L86">                .POST(&quot;/notifications/cart-reminders&quot;, handler::createCartReminder)</span>
+<span class="fc" id="L87">                .build();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

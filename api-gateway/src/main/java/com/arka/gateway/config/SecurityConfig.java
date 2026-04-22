@@ -31,6 +31,15 @@ import reactor.core.publisher.Mono;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
+    private static final String[] PUBLIC_PATHS = {
+            "/auth/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/webjars/**"
+    };
+
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http,
@@ -51,7 +60,7 @@ public class SecurityConfig {
                                 "No tiene el rol requerido para acceder a este recurso")))
                 .authorizeExchange(exchange -> exchange
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .pathMatchers("/auth/**").permitAll()
+                        .pathMatchers(PUBLIC_PATHS).permitAll()
                         .pathMatchers(HttpMethod.POST, "/products").hasRole("ADMIN")
                         .pathMatchers(HttpMethod.PATCH, "/products/*/stock").hasRole("ADMIN")
                         .pathMatchers(HttpMethod.DELETE, "/products/**").hasRole("ADMIN")
@@ -120,5 +129,4 @@ public class SecurityConfig {
 
         authorities.add(new SimpleGrantedAuthority(roleName));
     }
-
 }

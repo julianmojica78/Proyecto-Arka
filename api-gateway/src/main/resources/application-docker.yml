@@ -9,9 +9,53 @@ eureka:
     prefer-ip-address: true
 
 spring:
+  application:
+    name: api-gateway
+
   cloud:
     gateway:
       routes:
+        # =========================
+        # OpenAPI docs por servicio
+        # =========================
+        - id: auth-service-openapi
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/v3/api-docs/auth
+          filters:
+            - RewritePath=/v3/api-docs/auth, /v3/api-docs
+
+        - id: inventory-service-openapi
+          uri: lb://INVENTORY-SERVICE
+          predicates:
+            - Path=/v3/api-docs/inventory
+          filters:
+            - RewritePath=/v3/api-docs/inventory, /v3/api-docs
+
+        - id: order-service-openapi
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/v3/api-docs/order
+          filters:
+            - RewritePath=/v3/api-docs/order, /v3/api-docs
+
+        - id: notification-service-openapi
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/v3/api-docs/notification
+          filters:
+            - RewritePath=/v3/api-docs/notification, /v3/api-docs
+
+        - id: report-service-openapi
+          uri: lb://REPORT-SERVICE
+          predicates:
+            - Path=/v3/api-docs/report
+          filters:
+            - RewritePath=/v3/api-docs/report, /v3/api-docs
+
+        # =========================
+        # Rutas funcionales
+        # =========================
         - id: auth-service
           uri: lb://AUTH-SERVICE
           predicates:
@@ -28,7 +72,7 @@ spring:
             - Path=/orders/**,/carts/**
 
         - id: notification-service
-          uri: http://${NOTIFICATION_SERVICE_HOST:notification-service}:${NOTIFICATION_SERVICE_PORT:8084}
+          uri: lb://NOTIFICATION-SERVICE
           predicates:
             - Path=/notifications/**
 
@@ -36,3 +80,20 @@ spring:
           uri: lb://REPORT-SERVICE
           predicates:
             - Path=/reports/**
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: auth-service
+        url: /v3/api-docs/auth
+      - name: inventory-service
+        url: /v3/api-docs/inventory
+      - name: order-service
+        url: /v3/api-docs/order
+      - name: notification-service
+        url: /v3/api-docs/notification
+      - name: report-service
+        url: /v3/api-docs/report

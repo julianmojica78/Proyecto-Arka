@@ -19,6 +19,15 @@ spring:
         spring.json.trusted.packages: "*"
         spring.json.use.type.headers: true
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
+  override-with-generic-response: false
+
 eureka:
   client:
     register-with-eureka: true

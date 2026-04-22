@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.arka.inventory.application.usecase.CreateProductService;
 import com.arka.inventory.application.usecase.GetProductsService;
+import com.arka.inventory.application.usecase.StockChangeRecorder;
 import com.arka.inventory.application.usecase.UpdateProductStockService;
 import com.arka.inventory.application.usecase.UpdateStockService;
 import com.arka.inventory.domain.port.in.CreateProductUseCase;
@@ -28,14 +29,23 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public UpdateStockUseCase updateStockUseCase(ProductRepositoryPort repository) {
-        return new UpdateStockService(repository);
+    public StockChangeRecorder stockChangeRecorder(
+            ProductRepositoryPort repository,
+            StockHistoryRepositoryPort stockHistoryRepository) {
+        return new StockChangeRecorder(repository, stockHistoryRepository);
+    }
+
+    @Bean
+    public UpdateStockUseCase updateStockUseCase(
+            ProductRepositoryPort repository,
+            StockChangeRecorder stockChangeRecorder) {
+        return new UpdateStockService(repository, stockChangeRecorder);
     }
 
     @Bean
     public UpdateProductStockUseCase updateProductStockUseCase(
             ProductRepositoryPort repository,
-            StockHistoryRepositoryPort stockHistoryRepository) {
-        return new UpdateProductStockService(repository, stockHistoryRepository);
+            StockChangeRecorder stockChangeRecorder) {
+        return new UpdateProductStockService(repository, stockChangeRecorder);
     }
 }

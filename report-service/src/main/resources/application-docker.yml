@@ -7,6 +7,6 @@ eureka:
 
 services:
   inventory:
-    base-url: ${SERVICES_INVENTORY_BASE_URL:http://inventory-service}
+    base-url: ${SERVICES_INVENTORY_BASE_URL:http://INVENTORY-SERVICE}
   order:
-    base-url: ${SERVICES_ORDER_BASE_URL:http://order-service}
+    base-url: ${SERVICES_ORDER_BASE_URL:http://ORDER-SERVICE}

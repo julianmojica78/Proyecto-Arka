@@ -10,6 +10,14 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
+    private static final String[] SWAGGER_WHITELIST = {
+        "/v3/api-docs",
+        "/v3/api-docs/**",
+        "/swagger-ui.html",
+        "/swagger-ui/**",
+        "/webjars/**"
+};
+
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http,
@@ -27,6 +35,7 @@ public class SecurityConfig {
                                 exchange,
                                 "No tiene el rol requerido para acceder a este recurso")))
                 .authorizeExchange(exchange -> exchange
+                        .pathMatchers(SWAGGER_WHITELIST).permitAll()
                         .pathMatchers("/auth/login", "/auth/health").permitAll()
                         .anyExchange().denyAll()
                 )

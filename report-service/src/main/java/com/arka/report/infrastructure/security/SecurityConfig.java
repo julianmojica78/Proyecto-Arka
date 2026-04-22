@@ -33,6 +33,14 @@ import reactor.core.publisher.Mono;
 @EnableReactiveMethodSecurity
 public class SecurityConfig {
 
+    private static final String[] SWAGGER_WHITELIST = {
+        "/v3/api-docs",
+        "/v3/api-docs/**",
+        "/swagger-ui.html",
+        "/swagger-ui/**",
+        "/webjars/**"
+};
+
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http,
@@ -53,6 +61,7 @@ public class SecurityConfig {
                                 "No tiene el rol requerido para acceder a este recurso")))
                 .authorizeExchange(exchange -> exchange
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers(SWAGGER_WHITELIST).permitAll()
                         .pathMatchers("/reports/**").hasRole("ADMIN")
                         .anyExchange().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2

@@ -21,7 +21,7 @@ public class InventoryHttpClient {
 
     public InventoryHttpClient(
             @Qualifier("loadBalancedWebClientBuilder") WebClient.Builder webClientBuilder,
-            @Value("${services.inventory.base-url:http://inventory-service}") String inventoryBaseUrl) {
+            @Value("${services.inventory.base-url:http://INVENTORY-SERVICE}") String inventoryBaseUrl) {
         this.webClient = webClientBuilder.baseUrl(inventoryBaseUrl).build();
     }
 

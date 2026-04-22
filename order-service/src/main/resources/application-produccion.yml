@@ -12,7 +12,7 @@ notification:
 
 services:
   inventory:
-    base-url: ${SERVICES_INVENTORY_BASE_URL:http://inventory-service}
+    base-url: ${SERVICES_INVENTORY_BASE_URL:http://INVENTORY-SERVICE}
 
 eureka:
   client:
